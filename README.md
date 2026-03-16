@@ -19,13 +19,22 @@ Every failure gets encoded into a skill file, quality gate, or tool so the same 
 ## Quickstart
 
 ```bash
-git clone https://github.com/recallnet/deterministic-harness.git
+git clone https://github.com/sanketagarwal/deterministic-harness.git
 cd deterministic-harness
-chmod +x scaffold.sh
+chmod +x scaffold.sh scan-project.sh run-pipeline.sh generate-claude-md.sh
 ./scaffold.sh
 ```
 
-The script asks for your pipeline name, domain, number of stages, and stage names. It produces:
+Or auto-detect from an existing project:
+
+```bash
+./scan-project.sh /path/to/your/project    # Scans CI, tests, linting, git history
+./scaffold.sh --from-scan /tmp/harness-scan.conf   # Uses scan output as defaults
+./run-pipeline.sh your-pipeline my-feature  # Execute the pipeline with gates
+./generate-claude-md.sh your-pipeline       # Generate CLAUDE.md for agent integration
+```
+
+The script asks for your pipeline name, domain, number of stages, and stage names (with scan-detected defaults if available). It produces:
 
 ```
 your-pipeline/
@@ -53,6 +62,36 @@ your-pipeline/
 **Gate enforcer** (`gate-enforcer.sh`) — A shell script that mechanically checks output artifacts exist, all checklist items are checked, and human approvals are in place. Prints BLOCKED or PASSED. No exceptions.
 
 **Self-improvement loop** — During verification, every issue is traced back to the stage that should have caught it. The fix is a specific change to a specific file — a new checklist item, a new failure mode entry, a new gate condition. The fix gets committed. The harness gets better.
+
+## Project scanner
+
+`scan-project.sh` auto-detects your project setup and suggests pipeline stages:
+
+```bash
+./scan-project.sh /path/to/your/project
+```
+
+It scans for: package manager, CI config (GitHub Actions jobs), test framework, linting, build commands, CLAUDE.md, and git history (fix/revert commits become seed failure modes). Presents suggestions interactively — accept, skip, or edit each stage.
+
+## Pipeline runner
+
+`run-pipeline.sh` executes the pipeline with real commands and interactive gates:
+
+```bash
+./run-pipeline.sh my-pipeline feature-xyz
+```
+
+For each stage: runs the command (e.g., `pnpm lint && pnpm type-check`), parses output for test results/errors/coverage, runs gate-enforcer, and prompts for human approval at human gates. Logs failures and offers to write them to memory.md.
+
+## Agent integration
+
+`generate-claude-md.sh` produces a CLAUDE.md that tells an agent how to follow the pipeline:
+
+```bash
+./generate-claude-md.sh my-pipeline
+```
+
+Generates rules for: working through stages in order, loading skill files on-demand, running gate-enforcer before advancing, stopping at human gates, and committing self-improvement fixes.
 
 ## The self-improvement loop
 

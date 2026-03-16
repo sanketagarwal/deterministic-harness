@@ -9,6 +9,10 @@
 - **Input:** `{{INPUT_PATH}}`
 - **Output:** `{{OUTPUT_PATH}}`
 
+## Command
+
+**Command:** `{{COMMAND}}`
+
 ## Instructions
 
 1. {{Step 1}}

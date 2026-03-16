@@ -108,20 +108,69 @@ if [ -f "$PIPELINE_FILE" ]; then
 fi
 
 if [ "$GATE_TYPE" = "human" ]; then
+    NOTION_APPROVED=false
+    FILE_APPROVED=false
+
+    # Check Notion gate first (if dashboard is configured)
+    GATE_CHECK="$SCRIPT_DIR/../dashboard/notion/gate-check.js"
+    if [ ! -f "$GATE_CHECK" ]; then
+        # Try relative to harness root
+        GATE_CHECK="$(cd "$SCRIPT_DIR" && cd .. 2>/dev/null && pwd)/dashboard/notion/gate-check.js"
+    fi
+
+    if [ -f "$GATE_CHECK" ]; then
+        NOTION_RESULT="$(node "$GATE_CHECK" check "$PROJECT" "$STAGE" 2>/dev/null || true)"
+        NOTION_STATUS="$(echo "$NOTION_RESULT" | head -1)"
+        case "$NOTION_STATUS" in
+            APPROVED)
+                NOTION_APPROVED=true
+                echo "CHECK 3a - Notion gate: APPROVED"
+                ;;
+            AUTO_GATE)
+                echo "CHECK 3a - Notion gate: AUTO (no approval needed)"
+                ;;
+            NOT_APPROVED)
+                echo "CHECK 3a - Notion gate: NOT APPROVED"
+                echo "$(echo "$NOTION_RESULT" | tail -n +2)"
+                ;;
+            NOTION_NOT_CONFIGURED)
+                echo "CHECK 3a - Notion gate: not configured (falling back to file-based approval)"
+                ;;
+            *)
+                echo "CHECK 3a - Notion gate: unavailable (falling back to file-based approval)"
+                ;;
+        esac
+    else
+        echo "CHECK 3a - Notion gate: not installed (using file-based approval)"
+    fi
+
+    # Check file-based approval
     APPROVAL_FILE="$SCRIPT_DIR/research/${PROJECT}/.gate-${STAGE}-approved"
     if [ -f "$APPROVAL_FILE" ]; then
-        echo "CHECK 3 - Human gate approval: APPROVED ($(cat "$APPROVAL_FILE"))"
+        FILE_APPROVED=true
+        echo "CHECK 3b - File gate: APPROVED ($(cat "$APPROVAL_FILE"))"
     else
+        echo "CHECK 3b - File gate: no approval file"
+    fi
+
+    # Either Notion OR file approval is sufficient
+    if [ "$NOTION_APPROVED" = "true" ] || [ "$FILE_APPROVED" = "true" ]; then
+        echo ""
+        echo "CHECK 3 - Human gate approval: APPROVED"
+    else
+        echo ""
         echo "CHECK 3 - Human gate approval: NOT APPROVED"
         echo ""
         echo "BLOCKED: Stage ${STAGE} requires human approval."
-        echo "To approve, create the file:"
+        echo ""
+        echo "Option 1 (Notion): Set stage status to 'passed' in the Notion dashboard"
+        echo "Option 2 (File):   Create the file:"
         echo "  research/${PROJECT}/.gate-${STAGE}-approved"
         echo ""
         echo "Example:"
         echo "  echo 'Approved by <name> on <date>' > research/${PROJECT}/.gate-${STAGE}-approved"
         echo ""
-        echo "The agent cannot create this file. A human must review and approve."
+        echo "The agent cannot approve its own gate. A human must review and approve."
         exit 1
     fi
 else
