@@ -1,6 +1,6 @@
 ---
 name: harness
-description: Scaffold a self-improving agent harness for the current project. Scans the codebase, proposes pipeline stages with quality gates, and generates files that mechanically prevent repeated failures.
+description: Scaffold a self-improving agent harness for the current project. Scans the codebase to understand what it does, proposes domain-specific pipeline stages with quality gates, and generates files that mechanically prevent repeated failures.
 argument-hint: [pipeline-name]
 ---
 
@@ -10,39 +10,103 @@ You are scaffolding a **self-improving agent harness** — a pipeline where ever
 
 Core loop: `FAILURE → ROOT CAUSE → MECHANICAL FIX → NEVER REPEAT`
 
-## Step 1: Scan the project
+## Step 1: Understand the project domain
 
-Analyze the current project to understand what's there. Check for:
+This is the most important step. You are NOT building a generic CI/CD pipeline. You are building a pipeline that reflects **what this project actually does** — its domain, its workflows, what can go wrong at a business/domain level.
 
-- **Package manager**: package.json (npm/pnpm/yarn), Cargo.toml, pyproject.toml, go.mod, Gemfile, etc.
-- **CI config**: `.github/workflows/*.yml` — extract job names and commands
-- **Test framework**: test scripts, test directories, test config files
-- **Linting**: eslint, prettier, ruff, golangci-lint, clippy, rubocop, etc.
-- **Type checking**: TypeScript (tsc), mypy, pyright, etc.
-- **Build system**: build scripts, Makefiles, docker builds
-- **CLAUDE.md**: existing agent instructions (respect and integrate them)
-- **Git history**: `git log --oneline -50` — look for fix/revert commits as seed failure modes
+### 1a: Read and understand
 
-Present what you found as a brief summary to the user.
+Read these files to understand the project:
 
-## Step 2: Propose pipeline stages
+- **README.md** — what the project does, who it's for, what problem it solves
+- **CLAUDE.md** — existing agent instructions, workflows, conventions
+- **Main entry points** — `src/index.ts`, `main.py`, `cmd/main.go`, etc. — understand the core workflow
+- **Key source directories** — scan the top-level structure to understand the architecture
+- **Package/dependency files** — what libraries does it use? These hint at what it does (e.g., `@notionhq/client` = Notion integration, `puppeteer` = web scraping, `express` = web server)
+- **Config files** — `.env.example`, docker-compose, deployment configs
+- **CI config** — `.github/workflows/*.yml` — what does the project's CI do?
+- **Git history** — `git log --oneline -50` — recent work, fix/revert commits as seed failure modes
 
-Based on what you found, propose pipeline stages. The number of stages should match the project's complexity — could be 3, could be 7. Each stage needs:
+### 1b: Identify the domain workflow
 
-- **Name**: short, descriptive
-- **Purpose**: 1-2 sentences on what this stage does
+Based on what you read, answer these questions (do NOT show these to the user, use them to inform your stage design):
+
+1. **What does this project do?** (e.g., "scrapes prediction markets and finds arbitrage opportunities", "generates content from engineering updates", "verifies email addresses in bulk")
+2. **What is the core workflow?** Map the steps the project performs from input to output. For example:
+   - Content tool: Ingest sources → Research → Draft → Review → Publish
+   - Trading bot: Signal detection → Data validation → Strategy analysis → Risk assessment → Execution
+   - Verification engine: Input parsing → Cross-reference matching → Semantic analysis → Confidence scoring → Report generation
+   - CLI analyzer: Data ingestion → Pattern extraction → Scoring → Insight generation → Output formatting
+3. **What can go wrong at each step?** Not code bugs — domain failures. Wrong data, missed signals, bad analysis, false positives, compliance violations, quality issues.
+4. **What decisions does a human need to make?** These become human gates.
+
+### 1c: Identify tooling (secondary)
+
+Also check for tooling — but this is secondary to domain understanding:
+
+- Package manager, test framework, linting, type checking, build system
+- These may become checklist items WITHIN domain stages, not separate stages
+
+### 1d: Present findings
+
+Present a brief summary to the user:
+- "This project is a [description]. Its core workflow is [workflow]. I'll propose stages based on this domain."
+- List key files you read and what you learned
+
+## Step 2: Propose domain-specific pipeline stages
+
+Design stages that mirror the project's **actual workflow**, not a generic software pipeline.
+
+### What makes a good stage
+
+- Each stage represents a **meaningful phase** of the project's workflow
+- Stages should map to where **different types of failures** can occur
+- A stage's quality gate should catch failures **specific to what that stage does**
+- Code quality checks (lint, types, tests, build) are checklist items WITHIN relevant stages — not standalone stages unless the project is specifically about code quality
+
+### Bad vs. good stage design
+
+**BAD (generic CI/CD — same for every project):**
+1. Specification → 2. Lint & Types → 3. Testing → 4. Build → 5. Verification
+
+**GOOD (domain-specific — reflects what the project does):**
+
+For a content automation tool:
+1. Source Ingestion → 2. Research & Context → 3. Drafting → 4. Quality Review → 5. Publishing
+
+For a prediction market scanner:
+1. Signal Detection → 2. Data Collection & Validation → 3. Strategy Analysis → 4. Risk & Robustness Check → 5. Execution Decision
+
+For a semantic verification engine:
+1. Market Parsing → 2. Cross-Platform Matching → 3. Resolution Criteria Analysis → 4. Confidence Scoring → 5. Report & Alert
+
+For a CLI analysis tool:
+1. Data Ingestion → 2. Pattern Extraction → 3. Scoring & Analysis → 4. Insight Synthesis → 5. Output & Recommendations
+
+### Stage requirements
+
+Each stage needs:
+- **Name**: short, descriptive, domain-specific
+- **Purpose**: 2-3 sentences on what this stage does in the project's domain
 - **Gate type**: `human` (requires explicit approval) or `auto` (mechanical check only)
-- **Command**: the shell command to run (if applicable, e.g., `pnpm lint && pnpm type-check`)
-- **Checklist items**: 2-4 mechanical, grep-able checks (not subjective prose)
+- **Command**: shell command to run if applicable, or "manual" for agent-driven stages
+- **Checklist items**: 2-4 mechanical, grep-able checks specific to THIS stage's domain concerns
+- **Instructions**: Step-by-step instructions for what to do in this stage, specific to the project
 
-Rules for proposing stages:
+### Rules for stages
+
+- The number of stages should match the project's workflow complexity — could be 3, could be 8
 - First and last stages should default to `human` gates
-- Middle stages default to `auto` gates
-- Every stage must produce an output artifact
-- Quality gate items must be mechanical — "All tests pass" not "Code looks good"
+- Middle stages default to `auto` gates but use `human` for high-stakes decisions
+- Code quality checks (lint, type-check, test, build) should be integrated as checklist items in the relevant stage — e.g., "Build succeeds" is a checklist item in the final stage, not its own stage
+- Quality gate items must be mechanical and domain-specific — "All alternative explanations tested with quantified impact" not "Analysis looks good"
 - If you can construct a test for a flagged issue, that test MUST be a checklist item
 
-Present the proposed stages to the user in a clear table format. Ask for confirmation before generating files. The user may want to add, remove, reorder, or modify stages.
+### Present and confirm
+
+Present the proposed stages to the user in a clear table format with: stage name, purpose (1 line), gate type, key checklist items.
+
+Ask for confirmation before generating files. The user may want to add, remove, reorder, or modify stages. Be explicit: "These stages are based on [project]'s workflow of [description]. Want to adjust anything?"
 
 ## Step 3: Generate the harness
 
@@ -70,7 +134,7 @@ Use the pipeline name from the user's argument, or ask if not provided.
 ```markdown
 # {pipeline-name} Pipeline
 
-**Domain:** {detected or user-specified}
+**Domain:** {detected domain — be specific, e.g., "prediction market arbitrage scanning" not "software"}
 **Created:** {today's date}
 **Stages:** {count}
 
@@ -78,15 +142,15 @@ Use the pipeline name from the user's argument, or ask if not provided.
 
 ### Stage N: {Name}
 
-**Purpose:** {purpose}
+**Purpose:** {2-3 sentences, domain-specific}
 **Gate type:** {human|auto}
 **Input artifact:** `{path}`
 **Output artifact:** `{path}`
 
 #### Quality Gate Checklist
-- [ ] {mechanical check 1}
-- [ ] {mechanical check 2}
-- [ ] {mechanical check 3}
+- [ ] {domain-specific mechanical check 1}
+- [ ] {domain-specific mechanical check 2}
+- [ ] {domain-specific mechanical check 3}
 
 #### Known Failure Modes
 <!-- Populated over time from retrospectives -->
@@ -113,14 +177,14 @@ Any stage can kill the pipeline. A documented kill with clear reasoning is a suc
 
 ### Stage skill file format
 
-Each stage gets its own skill file at `skills/stage-N-{slug}.md`:
+Each stage gets its own skill file at `skills/stage-N-{slug}.md`. The instructions and checklist must be **specific to the project's domain**, not generic:
 
 ```markdown
 # Stage N: {Name}
 
 ## Purpose
 
-{2-3 lines on what this stage does, what decisions it makes, what it produces.}
+{2-3 lines on what this stage does IN THIS PROJECT'S DOMAIN. What decisions it makes, what it produces, what can go wrong.}
 
 ## Artifacts
 
@@ -133,17 +197,17 @@ Each stage gets its own skill file at `skills/stage-N-{slug}.md`:
 
 ## Instructions
 
-1. {Step 1 — specific to this stage}
-2. {Step 2}
+1. {Step 1 — specific to this stage AND this project's domain}
+2. {Step 2 — reference actual project files, APIs, data sources where relevant}
 3. {Step 3}
 4. Review your output against the Quality Gate Checklist below.
 5. Mark each checklist item as complete (`- [x]`) or leave unchecked with a note.
 
 ## Quality Gate Checklist
 
-- [ ] {mechanical check 1}
-- [ ] {mechanical check 2}
-- [ ] {mechanical check 3}
+- [ ] {domain-specific mechanical check 1}
+- [ ] {domain-specific mechanical check 2}
+- [ ] {domain-specific mechanical check 3}
 
 ## Known Failure Modes
 
@@ -203,7 +267,7 @@ If you cannot identify a specific, mechanical change, document why in the Open F
 Generate a POSIX-compatible shell script that:
 1. Takes pipeline dir, stage number, and project name as args
 2. Checks output artifact exists
-3. Checks all checklist items are marked `[x]` (grep for `^- \[ \]` in the output)
+3. Checks all checklist items are marked `[x]` (grep for `^- \[ \]` in the skill file)
 4. For human gates, checks approval file exists at `research/{project}/.gate-{stage}-approved`
 5. Prints `PASSED` or `BLOCKED` with reason
 6. Exits 0 for pass, 1 for block
@@ -258,18 +322,20 @@ Complete after each pipeline run.
 
 ## Step 4: Seed failure modes from git history
 
-If the git log contains fix/revert commits, add them as seed entries in the relevant stage's Known Failure Modes section. These are real failures that already happened — encoding them prevents repeats.
+If the git log contains fix/revert commits, add them as seed entries in the relevant stage's Known Failure Modes section. Map each fix to the domain stage it belongs to — not just "code fix" but "what domain-level failure did this fix address?"
 
 ## Step 5: Summary
 
 After generating all files, print:
 1. What was created (file list)
-2. How to run the pipeline (work through stages in order, load skill files on-demand, run gate-enforcer before advancing)
-3. How the self-improvement loop works (failure → root cause → mechanical fix → commit)
-4. Remind: "The harness improves itself. Every failure becomes a mechanical fix. The pipeline gets more reliable over time — not because the agent gets smarter, but because the system won't let it repeat past mistakes."
+2. The domain workflow the pipeline is based on
+3. How to run the pipeline (work through stages in order, load skill files on-demand, run gate-enforcer before advancing)
+4. How the self-improvement loop works (failure → root cause → mechanical fix → commit)
+5. Remind: "The harness improves itself. Every failure becomes a mechanical fix. The pipeline gets more reliable over time — not because the agent gets smarter, but because the system won't let it repeat past mistakes."
 
 ## Key principles
 
+- **Domain first, tooling second.** The pipeline mirrors the project's actual workflow, not a generic CI/CD pipeline. Code quality checks are items within domain stages, not their own stages.
 - **Rules in tools, not instructions.** Enforcement lives in gate-enforcer.sh and checklists, not in prose the agent might ignore.
 - **Skills loaded on-demand.** Each stage has its own skill file. Load only the relevant one per stage.
 - **Retrospectives produce commits, not prose.** Every fix must result in a file change.

@@ -31,9 +31,9 @@ Install as a Claude Code plugin and use `/harness` in any project:
 /harness my-pipeline
 ```
 
-Claude scans your project, proposes pipeline stages, and generates the harness — all interactively.
+Claude reads your codebase, understands what the project **actually does**, and proposes **domain-specific** pipeline stages — not generic CI/CD steps. For example, a content automation tool gets stages like Ingestion → Research → Drafting → Review → Publishing, not Lint → Test → Build.
 
-### Option 2: CLI scripts
+### Option 2: CLI scripts (tooling-only scan)
 
 ```bash
 git clone https://github.com/sanketagarwal/deterministic-harness.git
