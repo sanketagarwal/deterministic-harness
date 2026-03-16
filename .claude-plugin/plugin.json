@@ -1,0 +1,9 @@
+{
+  "name": "deterministic-harness",
+  "description": "Scaffold a self-improving agent harness for any project. Scans your codebase, proposes pipeline stages with quality gates, and generates a harness that mechanically prevents repeated failures.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Sanket Agarwal",
+    "url": "https://github.com/sanketagarwal"
+  }
+}

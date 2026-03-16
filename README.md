@@ -18,6 +18,23 @@ Every failure gets encoded into a skill file, quality gate, or tool so the same 
 
 ## Quickstart
 
+### Option 1: Claude Code skill (recommended)
+
+Install as a Claude Code plugin and use `/harness` in any project:
+
+```bash
+# In Claude Code:
+/plugin marketplace add sanketagarwal/deterministic-harness
+/plugin install deterministic-harness
+
+# Then in any project:
+/harness my-pipeline
+```
+
+Claude scans your project, proposes pipeline stages, and generates the harness — all interactively.
+
+### Option 2: CLI scripts
+
 ```bash
 git clone https://github.com/sanketagarwal/deterministic-harness.git
 cd deterministic-harness

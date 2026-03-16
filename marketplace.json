@@ -1,0 +1,14 @@
+{
+  "name": "deterministic-harness",
+  "owner": {
+    "name": "Sanket Agarwal",
+    "url": "https://github.com/sanketagarwal"
+  },
+  "plugins": [
+    {
+      "name": "deterministic-harness",
+      "source": ".",
+      "description": "Scaffold a self-improving agent harness for any project"
+    }
+  ]
+}
