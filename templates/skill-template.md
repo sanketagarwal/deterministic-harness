@@ -41,9 +41,9 @@
      Examples from different domains (for reference only, do not include in checklist grep):
 
      Research domain example:
-     **FM-1: Listed confound without testing it**
-     Trigger: Analysis stage identifies a confounding variable
-     Check: Every confound mentioned must have a corresponding test with quantified impact
+     **FM-1: Identified risk but did not act on it**
+     Trigger: Stage output mentions a problem, gap, or alternative explanation but advances without addressing it
+     Check: If you can construct a test, validation, or action for a flagged issue, you MUST execute it before advancing. Listing problems without acting on them is a disclaimer, not work.
      Added: 2026-01-15, from retrospective of run 3
 
      Software engineering example:
@@ -51,6 +51,12 @@
      Trigger: Unit tests pass but integration/E2E tests not executed
      Check: Test output log must contain E2E test runner output
      Added: 2026-02-01, from retrospective of run 5
+
+     Content/automation example:
+     **FM-1: Flagged quality issue but published anyway**
+     Trigger: Review stage notes "tone inconsistency" or "needs revision" but advances to publish
+     Check: Every flagged issue must have a resolution action (fix, rewrite, or explicit accept-with-reason) before advancing
+     Added: 2026-02-10, from retrospective of run 2
 -->
 
 ## Self-Improvement Hook

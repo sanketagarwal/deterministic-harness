@@ -44,7 +44,7 @@ Adversarially attack the findings from Stage 3. The goal is to break the result,
 
 **FM-1: Listed confound without testing it**
 Trigger: Verification names an alternative explanation (e.g., "could be driven by momentum") but does not run a distinguishing test
-Check: Every confound listed must have a corresponding test with a quantified result. No exceptions.
+Check: If you can construct a test for an alternative explanation, you MUST run it. Listing confounds without testing them is a disclaimer, not verification. Every confound must have a corresponding test with a quantified result.
 Added: 2026-03-05, from failure registry entry on untested confounds
 
 **FM-2: Robustness attack used unrealistic perturbation range**

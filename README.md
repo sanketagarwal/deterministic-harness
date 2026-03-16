@@ -107,6 +107,16 @@ The retrospective enforces this: every entry must result in a file change. If no
 
 Over time, the harness accumulates domain-specific knowledge as mechanical constraints. The quality gates get tighter. The failure modes get more specific. The pipeline gets more reliable — not because the agent got smarter, but because the system won't let it repeat past mistakes.
 
+### Real examples from production
+
+These are actual failures from production agent pipelines. Each required a different fix, and none could have been anticipated at design time.
+
+**1. The agent skipped a mandatory gate under pressure.** During a batch run, the agent skipped a human approval gate because the instruction to stop existed only as text in a skill file, and under load it got deprioritized. **Fix:** The gate enforcer now mechanically refuses to advance unless the Notion card status reads "Approved." Rules in instructions get forgotten; rules in tools work every time.
+
+**2. The agent did shallow work that looked thorough.** An analysis listed a known confounding factor as a possible alternative explanation — but treated it as a caveat rather than something to test. An external reviewer forced the test, which invalidated the entire finding. **Fix:** The verification skill now reads: *"If you can construct a test for an alternative explanation, you MUST run it. Listing confounds without testing them is a disclaimer, not verification."*
+
+**3. The agent found the problem but didn't act on it.** An analysis stage flagged a critical data gap and recommended "start collection immediately," then advanced to the next stage without starting collection. The problem was identified, documented, and ignored — all in the same run. **Fix:** The stage cannot advance until the flagged action item has been executed or explicitly deferred with justification.
+
 ## Examples
 
 ### Software QA (`examples/software-qa/`)
