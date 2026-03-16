@@ -1,10 +1,10 @@
 # deterministic-harness
 
-Scaffold a self-improving agent harness for any domain.
+A Claude Code skill that scaffolds self-improving agent harnesses for any project.
 
 ## The problem
 
-Most agent harnesses are static — you design them once and ship them. That works when the problem space is stable (build this feature, pass these tests). But in domains where failure modes keep evolving — research, analysis, security auditing, due diligence — a static harness degrades over time. Last month's checklist doesn't catch this month's edge case.
+Most agent harnesses are static — you design them once and ship them. That works when the problem space is stable (build this feature, pass these tests). But in domains where failure modes keep evolving — research, analysis, content automation, security auditing — a static harness degrades over time. Last month's checklist doesn't catch this month's edge case.
 
 ## The solution
 
@@ -16,42 +16,31 @@ FAILURE → ROOT CAUSE → MECHANICAL FIX → NEVER REPEAT
 
 Every failure gets encoded into a skill file, quality gate, or tool so the same mistake becomes structurally impossible to repeat. The agent doesn't need to remember the lesson — the system won't let it make the same mistake.
 
-## Quickstart
-
-### Option 1: Claude Code skill (recommended)
-
-Install as a Claude Code plugin and use `/harness` in any project:
+## Install
 
 ```bash
 # In Claude Code:
 /plugin marketplace add sanketagarwal/deterministic-harness
 /plugin install deterministic-harness
+```
 
-# Then in any project:
+## Usage
+
+```bash
+# In any project:
 /harness my-pipeline
 ```
 
-Claude reads your codebase, understands what the project **actually does**, and proposes **domain-specific** pipeline stages — not generic CI/CD steps. For example, a content automation tool gets stages like Ingestion → Research → Drafting → Review → Publishing, not Lint → Test → Build.
+Claude reads your codebase, understands what the project **actually does**, and proposes **domain-specific** pipeline stages. A content automation tool gets Ingestion → Research → Drafting → Review → Publishing. A verification engine gets Market Discovery → Cross-Platform Matching → Resolution Verification → Risk Assessment → Recommendation. Not generic Lint → Test → Build.
 
-### Option 2: CLI scripts (tooling-only scan)
+The skill:
+1. **Reads your project** — README, source code, dependencies, CI, git history
+2. **Understands the domain** — maps the project's actual workflow from input to output
+3. **Proposes stages** — domain-specific, with mechanical quality gates at each step
+4. **Asks for confirmation** — you can add, remove, reorder, or modify stages
+5. **Generates the harness** — pipeline.md, skill files, gate-enforcer, memory, improvement templates
 
-```bash
-git clone https://github.com/sanketagarwal/deterministic-harness.git
-cd deterministic-harness
-chmod +x scaffold.sh scan-project.sh run-pipeline.sh generate-claude-md.sh
-./scaffold.sh
-```
-
-Or auto-detect from an existing project:
-
-```bash
-./scan-project.sh /path/to/your/project    # Scans CI, tests, linting, git history
-./scaffold.sh --from-scan /tmp/harness-scan.conf   # Uses scan output as defaults
-./run-pipeline.sh your-pipeline my-feature  # Execute the pipeline with gates
-./generate-claude-md.sh your-pipeline       # Generate CLAUDE.md for agent integration
-```
-
-The script asks for your pipeline name, domain, number of stages, and stage names (with scan-detected defaults if available). It produces:
+## What gets generated
 
 ```
 your-pipeline/
@@ -72,7 +61,7 @@ your-pipeline/
 
 **Pipeline definition** (`pipeline.md`) — Defines each stage with its purpose, input/output artifacts, gate type (human or auto), and quality gate checklist. Any stage can kill the pipeline; a documented kill is a successful outcome.
 
-**Stage skills** (`skills/stage-N-name.md`) — Each stage has its own skill file loaded on-demand. Contains instructions, quality gate checklist, known failure modes, and a self-improvement hook that fires when downstream stages find flaws.
+**Stage skills** (`skills/stage-N-name.md`) — Each stage has its own skill file loaded on-demand. Contains domain-specific instructions, quality gate checklist, known failure modes, and a self-improvement hook that fires when downstream stages find flaws.
 
 **Quality gates** — Every stage has a checklist that must be fully checked before advancing. Items are mechanical and grep-able, not subjective prose. The gate enforcer won't let the pipeline advance with unchecked items.
 
@@ -80,47 +69,15 @@ your-pipeline/
 
 **Self-improvement loop** — During verification, every issue is traced back to the stage that should have caught it. The fix is a specific change to a specific file — a new checklist item, a new failure mode entry, a new gate condition. The fix gets committed. The harness gets better.
 
-## Project scanner
-
-`scan-project.sh` auto-detects your project setup and suggests pipeline stages:
-
-```bash
-./scan-project.sh /path/to/your/project
-```
-
-It scans for: package manager, CI config (GitHub Actions jobs), test framework, linting, build commands, CLAUDE.md, and git history (fix/revert commits become seed failure modes). Presents suggestions interactively — accept, skip, or edit each stage.
-
-## Pipeline runner
-
-`run-pipeline.sh` executes the pipeline with real commands and interactive gates:
-
-```bash
-./run-pipeline.sh my-pipeline feature-xyz
-```
-
-For each stage: runs the command (e.g., `pnpm lint && pnpm type-check`), parses output for test results/errors/coverage, runs gate-enforcer, and prompts for human approval at human gates. Logs failures and offers to write them to memory.md.
-
-## Agent integration
-
-`generate-claude-md.sh` produces a CLAUDE.md that tells an agent how to follow the pipeline:
-
-```bash
-./generate-claude-md.sh my-pipeline
-```
-
-Generates rules for: working through stages in order, loading skill files on-demand, running gate-enforcer before advancing, stopping at human gates, and committing self-improvement fixes.
-
 ## The self-improvement loop
 
-This is the key differentiator. Here's how it works:
+This is the key differentiator:
 
 1. **Verification finds an issue.** The agent (or human) discovers something that should have been caught earlier.
-2. **Root cause analysis.** For each issue: which earlier stage should have caught this? Why didn't the quality gate stop it?
+2. **Root cause analysis.** Which earlier stage should have caught this? Why didn't the quality gate stop it?
 3. **Mechanical fix.** A specific change to a specific file. Not "be more careful next time" — an actual checklist item, failure mode entry, or gate condition that makes the mistake structurally impossible.
 4. **Commit the fix.** Every fix is committed with `harness-fix(stage-N): description`. If nothing was committed, the fix didn't happen.
-5. **Update reliability tracking.** The failure registry in `memory.md` tracks pipeline reliability over time, with before/after estimates for each improvement.
-
-The retrospective enforces this: every entry must result in a file change. If nothing changed, the retrospective is incomplete. Run `git log` to verify all fixes appear as commits.
+5. **Update reliability tracking.** The failure registry in `memory.md` tracks pipeline reliability over time.
 
 Over time, the harness accumulates domain-specific knowledge as mechanical constraints. The quality gates get tighter. The failure modes get more specific. The pipeline gets more reliable — not because the agent got smarter, but because the system won't let it repeat past mistakes.
 
@@ -136,27 +93,25 @@ These are actual failures from production agent pipelines. Each required a diffe
 
 ## Examples
 
+### Semantic Verification Engine (`sve-harness/`)
+
+A 6-stage pipeline for cross-platform prediction market verification: Market Discovery → Cross-Platform Matching → Resolution Criteria Verification → Risk Assessment → Recommendation → Retrospective. Demonstrates domain-specific quality gates like "all six misalignment types checked" and seeded failure modes from design review.
+
+### Prompt Effectiveness Analyzer (`prompt-prof-harness/`)
+
+A 5-stage pipeline for AI prompt analysis: Session Parsing → Prompt Classification → Quality Scoring → Pattern Analysis → Report Generation. Includes a real pipeline run with 858 prompts — Stage 3 blocked on flat scoring distribution (96% of prompts scored 50-69), triggering the self-improvement loop.
+
 ### Software QA (`examples/software-qa/`)
 
-A 5-stage pipeline: Specification → Implementation → Testing → Verification → Release. Demonstrates human gates on first/last stages, auto gates in the middle, and realistic failure modes like "agent marked feature complete without running E2E tests."
-
-```bash
-# Use as a starting point
-cp -r examples/software-qa my-qa-pipeline
-```
+A 5-stage pipeline: Specification → Implementation → Testing → Verification → Release. Demonstrates human gates on first/last stages, auto gates in the middle.
 
 ### Research (`examples/research/`)
 
-A 5-stage pipeline: Hypothesis → Data Collection → Analysis → Verification → Synthesis. Demonstrates research-specific quality gates like falsifiability checks, confound testing, and traceability requirements.
-
-```bash
-# Use as a starting point
-cp -r examples/research my-research-pipeline
-```
+A 5-stage pipeline: Hypothesis → Data Collection → Analysis → Verification → Synthesis. Demonstrates research-specific quality gates like falsifiability checks and confound testing.
 
 ## Dashboard (Notion UI)
 
-Track your pipeline, failures, reliability, and improvements in a web dashboard backed by Notion databases.
+Track your pipeline, failures, reliability, and improvements in Notion databases.
 
 ### Setup
 
@@ -187,15 +142,16 @@ All data lives in Notion, so your team can view and edit it there too.
 
 ## Design principles
 
-1. **Rules in tools, not instructions.** Enforcement lives in `gate-enforcer.sh` and quality gate checklists, not in prose the agent might ignore under context pressure.
-2. **Skills loaded on-demand.** Each stage has its own skill file. The pipeline loads only the relevant one per stage, not all at once.
-3. **Retrospectives produce commits, not prose.** Every template that captures a failure has a field for "file changed." If nothing changed, the fix didn't happen.
-4. **The harness improves itself.** The verification stage always includes self-improvement analysis. Failure modes flow back into earlier stage skill files as new checklist items.
-5. **Kill is a valid outcome.** "This doesn't work, here's why" is a successful pipeline result, not a failure.
+1. **Domain first, tooling second.** The pipeline mirrors the project's actual workflow, not a generic CI/CD pipeline. Code quality checks are items within domain stages, not their own stages.
+2. **Rules in tools, not instructions.** Enforcement lives in `gate-enforcer.sh` and quality gate checklists, not in prose the agent might ignore under context pressure.
+3. **Skills loaded on-demand.** Each stage has its own skill file. The pipeline loads only the relevant one per stage, not all at once.
+4. **Retrospectives produce commits, not prose.** Every template that captures a failure has a field for "file changed." If nothing changed, the fix didn't happen.
+5. **The harness improves itself.** The verification stage always includes self-improvement analysis. Failure modes flow back into earlier stage skill files as new checklist items.
+6. **Kill is a valid outcome.** "This doesn't work, here's why" is a successful pipeline result, not a failure.
 
 ## Based on
 
-This scaffold implements a pattern from production use at [Recall Labs](https://recall.wiki), where a self-improving harness took pipeline reliability from 70% to 90% through mechanical fixes alone — without changing the underlying model. The pattern was developed while building [OpenClaw](https://openclaw.ai), a competitive intelligence platform, and is used in the [Arby workspace](https://github.com/recallnet/arb) for research pipelines. Read more about the approach in [Self-Improving Agent Harnesses](https://recall.wiki/blog/self-improving-harness).
+This implements a pattern from production use at [Recall Labs](https://recall.wiki), where a self-improving harness took pipeline reliability from 70% to 90% through mechanical fixes alone — without changing the underlying model.
 
 ## License
 
