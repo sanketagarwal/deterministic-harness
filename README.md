@@ -88,6 +88,37 @@ A 5-stage pipeline: Hypothesis → Data Collection → Analysis → Verification
 cp -r examples/research my-research-pipeline
 ```
 
+## Dashboard (Notion UI)
+
+Track your pipeline, failures, reliability, and improvements in a web dashboard backed by Notion databases.
+
+### Setup
+
+```bash
+cd dashboard
+npm install
+cp .env.example .env
+# Edit .env with your Notion integration token and parent page ID
+npm run setup    # Creates 5 Notion databases
+npm start        # Launches dashboard at http://localhost:3000
+```
+
+### Getting your Notion credentials
+
+1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations) and create an integration. Copy the token.
+2. Create a page in Notion where you want the databases. Share it with your integration.
+3. Copy the page ID from the URL (the 32-character hex string after the page name).
+
+### What you can manage
+
+- **Pipeline Stages** — view stage flow, gate types, checklist progress, status
+- **Failure Registry** — log failures with root cause, fix, and file changed
+- **Reliability Tracking** — chart reliability over time as fixes accumulate
+- **Open Failure Modes** — track known issues that don't have mechanical fixes yet
+- **Improvements Log** — record self-improvement fixes with source/target stage and severity
+
+All data lives in Notion, so your team can view and edit it there too.
+
 ## Design principles
 
 1. **Rules in tools, not instructions.** Enforcement lives in `gate-enforcer.sh` and quality gate checklists, not in prose the agent might ignore under context pressure.

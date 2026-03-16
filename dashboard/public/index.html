@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deterministic Harness Dashboard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h1>Harness Dashboard</h1>
+      <nav>
+        <a href="#" data-view="overview" class="active">
+          <span class="icon">&#9679;</span> Overview
+        </a>
+        <a href="#" data-view="stages">
+          <span class="icon">&#9654;</span> Pipeline Stages
+        </a>
+        <a href="#" data-view="failures">
+          <span class="icon">&#9888;</span> Failure Registry
+        </a>
+        <a href="#" data-view="reliability">
+          <span class="icon">&#9650;</span> Reliability
+        </a>
+        <a href="#" data-view="open-failures">
+          <span class="icon">&#9711;</span> Open Issues
+        </a>
+        <a href="#" data-view="improvements">
+          <span class="icon">&#10003;</span> Improvements
+        </a>
+      </nav>
+    </aside>
+    <main class="main">
+      <div class="empty-state">
+        <h3>Loading...</h3>
+      </div>
+    </main>
+  </div>
+
+  <div id="modal-overlay" class="modal-overlay"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
