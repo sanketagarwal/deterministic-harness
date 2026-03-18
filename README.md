@@ -20,13 +20,7 @@ Every failure gets encoded into a skill file, quality gate, or tool so the same 
 
 ## Install
 
-Copy the `skills/` directory into your Claude Code skills, or install as a plugin:
-
-```bash
-# As a plugin:
-/plugin marketplace add sanketagarwal/deterministic-harness
-/plugin install deterministic-harness
-```
+Copy the `skills/` directory into your project's `.claude/skills/` directory, or add it globally to `~/.claude/skills/`.
 
 ## Usage
 
