@@ -115,17 +115,17 @@ These are actual failures from production agent pipelines. Each required a diffe
 
 **3. The agent found the problem but didn't act on it.** An analysis stage flagged a critical data gap and recommended "start collection immediately," then advanced to the next stage without starting collection. The problem was identified, documented, and ignored — all in the same run. **Fix:** The stage cannot advance until the flagged action item has been executed or explicitly deferred with justification.
 
-## Examples
+## Example: prompt-prof
 
-### Semantic Verification Engine (`sve-harness/`)
+We ran `/harness` and `/run-pipeline` on [prompt-prof](https://github.com/sanketagarwal/prompt-prof), a CLI tool that scores AI coding assistant prompts. The harness:
 
-A 6-stage pipeline for cross-platform prediction market verification: Market Discovery → Cross-Platform Matching → Resolution Criteria Verification → Risk Assessment → Recommendation → Retrospective. Demonstrates domain-specific quality gates like "all six misalignment types checked" and seeded failure modes from design review.
+1. Scaffolded a 5-stage pipeline: Session Parsing → Prompt Classification → Quality Scoring → Pattern Analysis → Report Verification
+2. Stage 3 was mechanically blocked — 96% of prompts scored 50-69, triggering known failure modes FM-1 (flat distribution) and FM-2 (narrow range)
+3. Scoring rubric was recalibrated mid-run (4 source files changed), range went from 26 to 55 points
+4. Two bad checklist items were caught and reworded by the self-improvement loop
+5. Pipeline completed with reliability estimate at 85%
 
-### Prompt Effectiveness Analyzer (`prompt-prof-harness/`)
-
-A 5-stage pipeline for AI prompt analysis: Session Parsing → Prompt Classification → Quality Scoring → Pattern Analysis → Report Generation. Includes a real pipeline run with 858 prompts — Stage 3 blocked on flat scoring distribution (96% of prompts scored 50-69), triggering the self-improvement loop.
-
-> Note: These examples use the older sibling-directory layout. New harnesses are generated inside the project as `.harness/`.
+The harness lives at `prompt-prof/.harness/` — inside the project, not in this repo.
 
 ## Dashboard (optional)
 
