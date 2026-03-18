@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "setup": "node notion/setup-databases.js"
+    "setup": "node notion/setup-databases.js",
+    "export-csv": "node local/csv-export.js"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.0",

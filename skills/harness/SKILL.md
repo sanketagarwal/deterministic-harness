@@ -10,6 +10,8 @@ You are scaffolding a **self-improving agent harness** — a pipeline where ever
 
 Core loop: `FAILURE → ROOT CAUSE → MECHANICAL FIX → NEVER REPEAT`
 
+This is specifically for **agent pipelines** — workflows where an AI agent does multi-step work that can hallucinate, skip steps, or do shallow work that looks thorough. The harness mechanically prevents these failures from recurring.
+
 ## Step 1: Understand the project domain
 
 This is the most important step. You are NOT building a generic CI/CD pipeline. You are building a pipeline that reflects **what this project actually does** — its domain, its workflows, what can go wrong at a business/domain level.
@@ -37,8 +39,8 @@ Based on what you read, answer these questions (do NOT show these to the user, u
    - Trading bot: Signal detection → Data validation → Strategy analysis → Risk assessment → Execution
    - Verification engine: Input parsing → Cross-reference matching → Semantic analysis → Confidence scoring → Report generation
    - CLI analyzer: Data ingestion → Pattern extraction → Scoring → Insight generation → Output formatting
-3. **What can go wrong at each step?** Not code bugs — domain failures. Wrong data, missed signals, bad analysis, false positives, compliance violations, quality issues.
-4. **What decisions does a human need to make?** These become human gates.
+3. **What can go wrong at each step?** Not code bugs — domain failures. Wrong data, missed signals, bad analysis, false positives, compliance violations, quality issues. Agents will hallucinate here — what would a hallucination look like at each step?
+4. **What decisions does a human need to review?** These become human gates — points where the agent presents its work and the user approves in the conversation before proceeding.
 
 ### 1c: Identify tooling (secondary)
 
@@ -88,10 +90,20 @@ For a CLI analysis tool:
 Each stage needs:
 - **Name**: short, descriptive, domain-specific
 - **Purpose**: 2-3 sentences on what this stage does in the project's domain
-- **Gate type**: `human` (requires explicit approval) or `auto` (mechanical check only)
+- **Gate type**: `human` (requires user approval in conversation) or `auto` (mechanical check only)
 - **Command**: shell command to run if applicable, or "manual" for agent-driven stages
 - **Checklist items**: 2-4 mechanical, grep-able checks specific to THIS stage's domain concerns
 - **Instructions**: Step-by-step instructions for what to do in this stage, specific to the project
+
+### Rules for checklist items
+
+Checklist items are the most important part of the harness. Bad items create false blocks or false passes. Every item must follow these rules:
+
+- **Test the tool's behavior, not the user's data.** Bad: "At least one prompt scores above 80" (depends on what data the user has). Good: "Scoring system produces a range > 40 points across the dataset" (tests whether the tool differentiates).
+- **Be verifiable from the stage's output alone.** The agent must be able to check it mechanically — by running a command, grepping output, or computing a value. If it requires subjective judgment, it's not a checklist item.
+- **Don't require external dependencies to exist.** Bad: "All tests pass (with at least 1 test executed)" (the project may have no tests). Good: "If tests exist, they pass" or "Build succeeds."
+- **State what to check, not what to hope for.** Bad: "Results look reasonable." Good: "Output file contains at least 3 rows in the summary table."
+- **Each item should catch a different failure.** Don't write 3 items that all check "output file exists" in different words.
 
 ### Rules for stages
 
@@ -110,10 +122,10 @@ Ask for confirmation before generating files. The user may want to add, remove, 
 
 ## Step 3: Generate the harness
 
-Once the user confirms, create the following structure:
+Once the user confirms, create the following structure **inside the current project directory**:
 
 ```
-{pipeline-name}/
+.harness/
   pipeline.md              # Pipeline definition with stages and gates
   memory.md                # Failure registry
   gate-enforcer.sh         # Mechanical gate enforcement
@@ -121,11 +133,13 @@ Once the user confirms, create the following structure:
     stage-1-{slug}.md      # One skill file per stage
     stage-2-{slug}.md
     ...
-  research/                # Working directory for artifacts
+  research/                # Working directory for output artifacts
   .improvements/
     self-improve.md        # Self-improvement analysis template
     retrospective.md       # Post-run retrospective template
 ```
+
+The harness is generated **inside the project** as `.harness/`. It is not a sibling directory. Add `.harness/research/` to `.gitignore` (artifacts are ephemeral). The rest of `.harness/` should be committed — it is the pipeline's institutional memory that improves over time.
 
 Use the pipeline name from the user's argument, or ask if not provided.
 
@@ -137,6 +151,7 @@ Use the pipeline name from the user's argument, or ask if not provided.
 **Domain:** {detected domain — be specific, e.g., "prediction market arbitrage scanning" not "software"}
 **Created:** {today's date}
 **Stages:** {count}
+**Run:** `/run-pipeline` to execute, `/run-pipeline N` to resume from stage N
 
 ---
 
@@ -159,7 +174,7 @@ Use the pipeline name from the user's argument, or ask if not provided.
 
 ## Gate Rules
 
-**Human Gate:** Requires explicit human approval before advancing. The agent produces output and checklist, then waits. A human reviews and creates an approval file at `research/{pipeline-name}/.gate-{stage}-approved`.
+**Human Gate:** The agent completes the stage, runs gate-enforcer.sh, then presents results to the user in the conversation. The user reviews and approves (or gives feedback) before the pipeline advances. The agent cannot approve its own human gate.
 
 **Auto Gate:** Gate enforcer checks mechanically — output artifact exists, all checklist items checked. Advances automatically if both conditions are met.
 
@@ -177,14 +192,14 @@ Any stage can kill the pipeline. A documented kill with clear reasoning is a suc
 
 ### Stage skill file format
 
-Each stage gets its own skill file at `skills/stage-N-{slug}.md`. The instructions and checklist must be **specific to the project's domain**, not generic:
+Each stage gets its own skill file at `.harness/skills/stage-N-{slug}.md`. The instructions and checklist must be **specific to the project's domain**, not generic:
 
 ```markdown
 # Stage N: {Name}
 
 ## Purpose
 
-{2-3 lines on what this stage does IN THIS PROJECT'S DOMAIN. What decisions it makes, what it produces, what can go wrong.}
+{2-3 lines on what this stage does IN THIS PROJECT'S DOMAIN. What decisions it makes, what it produces, what can go wrong. What would a hallucination look like at this stage?}
 
 ## Artifacts
 
@@ -225,7 +240,7 @@ When a downstream stage finds that this stage's output was flawed:
 
 1. **Add to Known Failure Modes** above with the FM-N format.
 2. **Add a checklist item** that would have caught this specific issue.
-3. **Log in memory.md** with the failure, root cause, fix applied, and this file as the file changed.
+3. **Log in `.harness/memory.md`** with the failure, root cause, fix applied, and this file as the file changed.
 4. **Commit** with format: `harness-fix(stage-N): description of what was added`
 
 If you cannot identify a specific, mechanical change, document why in the Open Failure Modes table in memory.md.
@@ -265,12 +280,13 @@ If you cannot identify a specific, mechanical change, document why in the Open F
 ### gate-enforcer.sh
 
 Generate a POSIX-compatible shell script that:
-1. Takes pipeline dir, stage number, and project name as args
-2. Checks output artifact exists
-3. Checks all checklist items are marked `[x]` (grep for `^- \[ \]` in the skill file)
-4. For human gates, checks approval file exists at `research/{project}/.gate-{stage}-approved`
-5. Prints `PASSED` or `BLOCKED` with reason
-6. Exits 0 for pass, 1 for block
+1. Takes stage number as the argument
+2. Checks output artifact exists (reads path from the skill file)
+3. Checks all checklist items are marked as complete — match `[x]` or `[X]` case-insensitively, count unchecked as `[ ]`. Use patterns that handle whitespace variations.
+4. Reads pipeline.md to determine gate type. If human, prints `HUMAN_GATE_REQUIRED` and exits 0 (the runner handles asking the user). If auto, prints `PASSED` and exits 0.
+5. Exits 1 only when artifacts are missing or checklist items are unchecked — prints `BLOCKED` with the specific reason.
+
+The gate enforcer does **mechanical checks only**. Human gate approval happens in the conversation via the `/run-pipeline` skill, not in this script.
 
 ### self-improve.md format
 
@@ -329,15 +345,19 @@ If the git log contains fix/revert commits, add them as seed entries in the rele
 After generating all files, print:
 1. What was created (file list)
 2. The domain workflow the pipeline is based on
-3. How to run the pipeline (work through stages in order, load skill files on-demand, run gate-enforcer before advancing)
-4. How the self-improvement loop works (failure → root cause → mechanical fix → commit)
-5. Remind: "The harness improves itself. Every failure becomes a mechanical fix. The pipeline gets more reliable over time — not because the agent gets smarter, but because the system won't let it repeat past mistakes."
+3. How the self-improvement loop works (failure → root cause → mechanical fix → commit)
+4. Remind: "The harness improves itself. Every failure becomes a mechanical fix. The pipeline gets more reliable over time — not because the agent gets smarter, but because the system won't let it repeat past mistakes."
+
+Then ask: **"Harness ready. Want me to run the pipeline now? (`/run-pipeline`)"**
+
+This is important — the user should know immediately that the next step is `/run-pipeline`. Don't just print instructions and stop.
 
 ## Key principles
 
 - **Domain first, tooling second.** The pipeline mirrors the project's actual workflow, not a generic CI/CD pipeline. Code quality checks are items within domain stages, not their own stages.
-- **Rules in tools, not instructions.** Enforcement lives in gate-enforcer.sh and checklists, not in prose the agent might ignore.
-- **Skills loaded on-demand.** Each stage has its own skill file. Load only the relevant one per stage.
+- **Rules in tools, not instructions.** Enforcement lives in `gate-enforcer.sh` and quality gate checklists, not in prose the agent might ignore.
+- **Human gates are conversational.** The agent presents results in the conversation and waits for user approval. No external tools needed.
+- **Skills loaded on-demand.** Each stage has its own skill file. The pipeline loads only the relevant one per stage, not all at once.
 - **Retrospectives produce commits, not prose.** Every fix must result in a file change.
 - **Kill is a valid outcome.** "This doesn't work, here's why" is a successful pipeline result.
 - **If you can test it, you MUST test it.** Listing problems without acting on them is a disclaimer, not work.

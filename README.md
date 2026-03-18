@@ -4,7 +4,9 @@ A Claude Code skill that scaffolds self-improving agent harnesses for any projec
 
 ## The problem
 
-Most agent harnesses are static — you design them once and ship them. That works when the problem space is stable (build this feature, pass these tests). But in domains where failure modes keep evolving — research, analysis, content automation, security auditing — a static harness degrades over time. Last month's checklist doesn't catch this month's edge case.
+Agents hallucinate. They skip steps under context pressure. They do shallow work that looks thorough. A static checklist doesn't fix this — under load, agents deprioritize instructions and self-report success without verification.
+
+Most agent harnesses are also static — designed once, shipped, and never updated. That works when the problem space is stable. But in domains where failure modes keep evolving — research, analysis, content automation, trading — a static harness degrades over time. Last month's checklist doesn't catch this month's edge case.
 
 ## The solution
 
@@ -18,8 +20,10 @@ Every failure gets encoded into a skill file, quality gate, or tool so the same 
 
 ## Install
 
+Copy the `skills/` directory into your Claude Code skills, or install as a plugin:
+
 ```bash
-# In Claude Code:
+# As a plugin:
 /plugin marketplace add sanketagarwal/deterministic-harness
 /plugin install deterministic-harness
 ```
@@ -27,35 +31,52 @@ Every failure gets encoded into a skill file, quality gate, or tool so the same 
 ## Usage
 
 ```bash
-# In any project:
+# In any project — scaffold the harness:
 /harness my-pipeline
+
+# Run the pipeline:
+/run-pipeline
+
+# Resume from a specific stage:
+/run-pipeline 3
 ```
 
 Claude reads your codebase, understands what the project **actually does**, and proposes **domain-specific** pipeline stages. Ex: A content automation tool gets Ingestion → Research → Drafting → Review → Publishing. 
 
-The skill:
+### `/harness` — the scaffold
+
 1. **Reads your project** — README, source code, dependencies, CI, git history
 2. **Understands the domain** — maps the project's actual workflow from input to output
 3. **Proposes stages** — domain-specific, with mechanical quality gates at each step
 4. **Asks for confirmation** — you can add, remove, reorder, or modify stages
-5. **Generates the harness** — pipeline.md, skill files, gate-enforcer, memory, improvement templates
+5. **Generates the harness** — `.harness/` directory with pipeline definition, skill files, gate enforcer, memory, and improvement templates
+
+### `/run-pipeline` — the runner
+
+1. **Reads the pipeline** — loads `.harness/pipeline.md` and past failure history
+2. **Executes stages sequentially** — loads each stage skill, does the work, writes output artifacts
+3. **Enforces gates mechanically** — runs `gate-enforcer.sh` after every stage (no skipping)
+4. **Asks you at human gates** — presents results in the conversation, waits for your approval before proceeding
+5. **Logs failures and improves** — every failure gets traced, fixed, and committed
 
 ## What gets generated
 
 ```
-your-pipeline/
+.harness/
   pipeline.md              # Pipeline definition with stages and gates
-  memory.md                # Failure registry
-  gate-enforcer.sh         # Mechanical gate enforcement
+  memory.md                # Failure registry — the pipeline's institutional memory
+  gate-enforcer.sh         # Mechanical gate enforcement script
   skills/
     stage-1-name.md        # One skill file per stage
     stage-2-name.md
     ...
-  research/                # Working directory for artifacts
+  research/                # Working directory for output artifacts
   .improvements/
     self-improve.md        # Self-improvement analysis template
     retrospective.md       # Post-run retrospective template
 ```
+
+The harness lives inside your project as `.harness/`. Add `.harness/research/` to `.gitignore` (artifacts are ephemeral). Commit the rest — it's the pipeline's memory that improves over time.
 
 ## How it works
 
@@ -65,7 +86,9 @@ your-pipeline/
 
 **Quality gates** — Every stage has a checklist that must be fully checked before advancing. Items are mechanical and grep-able, not subjective prose. The gate enforcer won't let the pipeline advance with unchecked items.
 
-**Gate enforcer** (`gate-enforcer.sh`) — A shell script that mechanically checks output artifacts exist, all checklist items are checked, and human approvals are in place. Prints BLOCKED or PASSED. No exceptions.
+**Gate enforcer** (`gate-enforcer.sh`) — A shell script that mechanically checks output artifacts exist and all checklist items are checked. Prints BLOCKED or PASSED. No exceptions.
+
+**Human gates** — At key stages (first, last, and high-stakes decisions), the runner presents results directly in the Claude Code conversation and asks you to approve. The agent literally cannot proceed without your response — this is mechanically enforced by the conversation flow, not by instructions the agent can skip.
 
 **Self-improvement loop** — During verification, every issue is traced back to the stage that should have caught it. The fix is a specific change to a specific file — a new checklist item, a new failure mode entry, a new gate condition. The fix gets committed. The harness gets better.
 
@@ -85,7 +108,7 @@ Over time, the harness accumulates domain-specific knowledge as mechanical const
 
 These are actual failures from production agent pipelines. Each required a different fix, and none could have been anticipated at design time.
 
-**1. The agent skipped a mandatory gate under pressure.** During a batch run, the agent skipped a human approval gate because the instruction to stop existed only as text in a skill file, and under load it got deprioritized. **Fix:** The gate enforcer now mechanically refuses to advance unless the Notion card status reads "Approved." Rules in instructions get forgotten; rules in tools work every time.
+**1. The agent skipped a mandatory gate under pressure.** During a batch run, the agent skipped a human approval gate because the instruction to stop existed only as text in a skill file, and under load it got deprioritized. **Fix:** Human gates are now conversational — the runner presents results and waits for user input. The agent physically cannot proceed because it's waiting for a message. Instructions get forgotten; waiting for input is structural.
 
 **2. The agent did shallow work that looked thorough.** An analysis listed a known confounding factor as a possible alternative explanation — but treated it as a caveat rather than something to test. An external reviewer forced the test, which invalidated the entire finding. **Fix:** The verification skill now reads: *"If you can construct a test for an alternative explanation, you MUST run it. Listing confounds without testing them is a disclaimer, not verification."*
 
@@ -101,45 +124,39 @@ A 6-stage pipeline for cross-platform prediction market verification: Market Dis
 
 A 5-stage pipeline for AI prompt analysis: Session Parsing → Prompt Classification → Quality Scoring → Pattern Analysis → Report Generation. Includes a real pipeline run with 858 prompts — Stage 3 blocked on flat scoring distribution (96% of prompts scored 50-69), triggering the self-improvement loop.
 
-### Software QA (`examples/software-qa/`)
+> Note: These examples use the older sibling-directory layout. New harnesses are generated inside the project as `.harness/`.
 
-A 5-stage pipeline: Specification → Implementation → Testing → Verification → Release. Demonstrates human gates on first/last stages, auto gates in the middle.
+## Dashboard (optional)
 
-### Research (`examples/research/`)
-
-A 5-stage pipeline: Hypothesis → Data Collection → Analysis → Verification → Synthesis. Demonstrates research-specific quality gates like falsifiability checks and confound testing.
-
-## Dashboard (Notion UI)
-
-Track your pipeline, failures, reliability, and improvements in Notion databases.
-
-### Setup
+Track your pipeline failures, reliability, and improvements with a local web dashboard. No external accounts required.
 
 ```bash
 cd dashboard
 npm install
-cp .env.example .env
-# Edit .env with your Notion integration token and parent page ID
-npm run setup    # Creates 5 Notion databases
-npm start        # Launches dashboard at http://localhost:3000
+npm start        # http://localhost:3000 — local JSON backend, no setup needed
 ```
 
-### Getting your Notion credentials
+Export data to CSV anytime:
+```bash
+npm run export-csv
+```
 
-1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations) and create an integration. Copy the token.
-2. Create a page in Notion where you want the databases. Share it with your integration.
-3. Copy the page ID from the URL (the 32-character hex string after the page name).
+Optionally connect Notion for team visibility — see `dashboard/.env.example` for setup.
 
-### What you can manage
+## Design principles
 
-- **Pipeline Stages** — view stage flow, gate types, checklist progress, status
-- **Failure Registry** — log failures with root cause, fix, and file changed
-- **Reliability Tracking** — chart reliability over time as fixes accumulate
-- **Open Failure Modes** — track known issues that don't have mechanical fixes yet
-- **Improvements Log** — record self-improvement fixes with source/target stage and severity
+1. **Built for agents, not CI/CD.** Agents hallucinate and skip steps under pressure. Every design decision assumes the executor is unreliable and needs mechanical guardrails.
+2. **Domain first, tooling second.** The pipeline mirrors the project's actual workflow, not a generic software pipeline. Code quality checks are items within domain stages, not their own stages.
+3. **Rules in tools, not instructions.** Enforcement lives in `gate-enforcer.sh` and quality gate checklists, not in prose the agent might ignore under context pressure.
+4. **Human gates are conversational.** The agent presents results directly in the conversation and waits for your approval. No external tools, no context switches.
+5. **Skills loaded on-demand.** Each stage has its own skill file. The pipeline loads only the relevant one per stage, not all at once.
+6. **Retrospectives produce commits, not prose.** Every fix must result in a file change.
+7. **The harness improves itself.** The verification stage always includes self-improvement analysis. Failure modes flow back into earlier stage skill files as new checklist items.
+8. **Kill is a valid outcome.** "This doesn't work, here's why" is a successful pipeline result, not a failure.
 
-All data lives in Notion, so your team can view and edit it there too.
+## Based on
 
+This implements a pattern from production use at [Recall Labs](https://recall.wiki), where a self-improving harness took pipeline reliability from 70% to 90% through mechanical fixes alone — without changing the underlying model.
 ## License
 
 MIT

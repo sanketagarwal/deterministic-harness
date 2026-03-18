@@ -1,3 +1,4 @@
 node_modules/
 .env
 notion-config.json
+.harness-data/
