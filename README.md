@@ -53,11 +53,18 @@ Claude reads your codebase, understands what the project **actually does**, and 
 
 ### `/run-pipeline` — the runner
 
-1. **Reads the pipeline** — loads `.harness/pipeline.md` and past failure history
-2. **Executes stages sequentially** — loads each stage skill, does the work, writes output artifacts
-3. **Enforces gates mechanically** — runs `gate-enforcer.sh` after every stage (no skipping)
-4. **Asks you at human gates** — presents results in the conversation, waits for your approval before proceeding
-5. **Logs failures and improves** — every failure gets traced, fixed, and committed
+1. **Asks where to track data** — local JSON (zero setup) or Notion (for team visibility)
+2. **Reads the pipeline** — loads `.harness/pipeline.md` and past failure history
+3. **Executes stages sequentially** — loads each stage skill, does the work, writes output artifacts
+4. **Enforces gates mechanically** — runs `gate-enforcer.sh` after every stage (no skipping)
+5. **Asks you at human gates** — presents results in the conversation, waits for your approval before proceeding
+6. **Logs failures and improves** — every failure gets traced, fixed, and committed
+
+Human gates look like this in practice:
+
+> **Stage 3 (Quality Scoring) is complete.** Scoring range is 21-76 across 780 prompts. Two known failure modes were checked — both pass. Approve to proceed to Stage 4?
+
+You reply in the conversation. The agent can't proceed without your response.
 
 ## What gets generated
 
@@ -157,6 +164,7 @@ Optionally connect Notion for team visibility — see `dashboard/.env.example` f
 ## Based on
 
 This implements a pattern from production use at [Recall Labs](https://recall.wiki), where a self-improving harness took pipeline reliability from 70% to 90% through mechanical fixes alone — without changing the underlying model.
+
 ## License
 
 MIT
