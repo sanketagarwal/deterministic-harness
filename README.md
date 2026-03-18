@@ -155,10 +155,6 @@ Optionally connect Notion for team visibility — see `dashboard/.env.example` f
 7. **The harness improves itself.** The verification stage always includes self-improvement analysis. Failure modes flow back into earlier stage skill files as new checklist items.
 8. **Kill is a valid outcome.** "This doesn't work, here's why" is a successful pipeline result, not a failure.
 
-## Based on
-
-This implements a pattern from production use at [Recall Labs](https://recall.wiki), where a self-improving harness took pipeline reliability from 70% to 90% through mechanical fixes alone — without changing the underlying model.
-
 ## License
 
 MIT
