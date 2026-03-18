@@ -127,22 +127,24 @@ We ran `/harness` and `/run-pipeline` on [prompt-prof](https://github.com/sanket
 
 The harness lives at `prompt-prof/.harness/` — inside the project, not in this repo.
 
-## Dashboard (optional)
+## Tracking (optional)
 
-Track your pipeline failures, reliability, and improvements with a local web dashboard. No external accounts required.
+Pipeline data (stages, failures, reliability, improvements) is always tracked in `.harness/memory.md` and committed to git. Optionally, you can also sync to:
 
+**Local JSON + CSV export** — stored in `.harness-data/`, no setup needed:
 ```bash
-cd dashboard
-npm install
-npm start        # http://localhost:3000 — local JSON backend, no setup needed
+cd dashboard && npm install
+npm run export-csv    # Exports all tracking data to CSV
 ```
 
-Export data to CSV anytime:
+**Notion** — for team visibility in a richer UI:
 ```bash
-npm run export-csv
+cd dashboard && npm install
+cp .env.example .env  # Add your NOTION_TOKEN and NOTION_PARENT_PAGE_ID
+npm run setup-notion  # Creates 5 Notion databases
 ```
 
-Optionally connect Notion for team visibility — see `dashboard/.env.example` for setup.
+The `/run-pipeline` skill asks which backend you want at the start of each run.
 
 ## License
 

@@ -1,16 +1,13 @@
 {
-  "name": "deterministic-harness-dashboard",
+  "name": "deterministic-harness-tracking",
   "version": "1.0.0",
-  "description": "Notion-backed UI for managing deterministic harness pipelines",
-  "main": "server.js",
+  "description": "Local JSON and optional Notion tracking for deterministic harness pipelines",
   "scripts": {
-    "start": "node server.js",
-    "setup": "node notion/setup-databases.js",
+    "setup-notion": "node notion/setup-databases.js",
     "export-csv": "node local/csv-export.js"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.0",
-    "express": "^4.18.0",
     "dotenv": "^16.4.0"
   }
 }
