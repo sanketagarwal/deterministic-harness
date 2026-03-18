@@ -31,7 +31,7 @@ Every failure gets encoded into a skill file, quality gate, or tool so the same 
 /harness my-pipeline
 ```
 
-Claude reads your codebase, understands what the project **actually does**, and proposes **domain-specific** pipeline stages. A content automation tool gets Ingestion → Research → Drafting → Review → Publishing. A verification engine gets Market Discovery → Cross-Platform Matching → Resolution Verification → Risk Assessment → Recommendation. Not generic Lint → Test → Build.
+Claude reads your codebase, understands what the project **actually does**, and proposes **domain-specific** pipeline stages. Ex: A content automation tool gets Ingestion → Research → Drafting → Review → Publishing. 
 
 The skill:
 1. **Reads your project** — README, source code, dependencies, CI, git history
@@ -139,16 +139,6 @@ npm start        # Launches dashboard at http://localhost:3000
 - **Improvements Log** — record self-improvement fixes with source/target stage and severity
 
 All data lives in Notion, so your team can view and edit it there too.
-
-## Design principles
-
-1. **Domain first, tooling second.** The pipeline mirrors the project's actual workflow, not a generic CI/CD pipeline. Code quality checks are items within domain stages, not their own stages.
-2. **Rules in tools, not instructions.** Enforcement lives in `gate-enforcer.sh` and quality gate checklists, not in prose the agent might ignore under context pressure.
-3. **Skills loaded on-demand.** Each stage has its own skill file. The pipeline loads only the relevant one per stage, not all at once.
-4. **Retrospectives produce commits, not prose.** Every template that captures a failure has a field for "file changed." If nothing changed, the fix didn't happen.
-5. **The harness improves itself.** The verification stage always includes self-improvement analysis. Failure modes flow back into earlier stage skill files as new checklist items.
-6. **Kill is a valid outcome.** "This doesn't work, here's why" is a successful pipeline result, not a failure.
-
 
 ## License
 
