@@ -144,17 +144,6 @@ npm run export-csv
 
 Optionally connect Notion for team visibility — see `dashboard/.env.example` for setup.
 
-## Design principles
-
-1. **Built for agents, not CI/CD.** Agents hallucinate and skip steps under pressure. Every design decision assumes the executor is unreliable and needs mechanical guardrails.
-2. **Domain first, tooling second.** The pipeline mirrors the project's actual workflow, not a generic software pipeline. Code quality checks are items within domain stages, not their own stages.
-3. **Rules in tools, not instructions.** Enforcement lives in `gate-enforcer.sh` and quality gate checklists, not in prose the agent might ignore under context pressure.
-4. **Human gates are conversational.** The agent presents results directly in the conversation and waits for your approval. No external tools, no context switches.
-5. **Skills loaded on-demand.** Each stage has its own skill file. The pipeline loads only the relevant one per stage, not all at once.
-6. **Retrospectives produce commits, not prose.** Every fix must result in a file change.
-7. **The harness improves itself.** The verification stage always includes self-improvement analysis. Failure modes flow back into earlier stage skill files as new checklist items.
-8. **Kill is a valid outcome.** "This doesn't work, here's why" is a successful pipeline result, not a failure.
-
 ## License
 
 MIT
