@@ -2,7 +2,7 @@
 
 A Claude Code skill that scaffolds self-improving agent harnesses for any project.
 
-We built this for an internal agentic workflow we were working on, and felt that this can provide greater insights to building a better harness in general.
+We built this for an internal agentic workflow we were working on, and felt that this can provide insights to building a better harness in general.
 
 ## The problem
 
