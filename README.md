@@ -2,6 +2,8 @@
 
 A Claude Code skill that scaffolds self-improving agent harnesses for any project.
 
+We built this for an internal agentic workflow we were working on, and felt that this can provide greater insights to building a better harness in general.
+
 ## The problem
 
 Agents hallucinate. They skip steps under context pressure. They do shallow work that looks thorough. A static checklist doesn't fix this — under load, agents deprioritize instructions and self-report success without verification.
