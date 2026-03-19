@@ -1,4 +1,4 @@
-# deterministic-harness
+# dynamic-harness
 
 A Claude Code skill that scaffolds self-improving agent harnesses for any project.
 
@@ -114,18 +114,6 @@ These are actual failures from production agent pipelines. Each required a diffe
 **2. The agent did shallow work that looked thorough.** An analysis listed a known confounding factor as a possible alternative explanation — but treated it as a caveat rather than something to test. An external reviewer forced the test, which invalidated the entire finding. **Fix:** The verification skill now reads: *"If you can construct a test for an alternative explanation, you MUST run it. Listing confounds without testing them is a disclaimer, not verification."*
 
 **3. The agent found the problem but didn't act on it.** An analysis stage flagged a critical data gap and recommended "start collection immediately," then advanced to the next stage without starting collection. The problem was identified, documented, and ignored — all in the same run. **Fix:** The stage cannot advance until the flagged action item has been executed or explicitly deferred with justification.
-
-## Example: prompt-prof
-
-We ran `/harness` and `/run-pipeline` on [prompt-prof](https://github.com/sanketagarwal/prompt-prof), a CLI tool that scores AI coding assistant prompts. The harness:
-
-1. Scaffolded a 5-stage pipeline: Session Parsing → Prompt Classification → Quality Scoring → Pattern Analysis → Report Verification
-2. Stage 3 was mechanically blocked — 96% of prompts scored 50-69, triggering known failure modes FM-1 (flat distribution) and FM-2 (narrow range)
-3. Scoring rubric was recalibrated mid-run (4 source files changed), range went from 26 to 55 points
-4. Two bad checklist items were caught and reworded by the self-improvement loop
-5. Pipeline completed with reliability estimate at 85%
-
-The harness lives at `prompt-prof/.harness/` — inside the project, not in this repo.
 
 ## Tracking (optional)
 
