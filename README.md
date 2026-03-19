@@ -2,11 +2,11 @@
 
 A Claude Code skill that scaffolds self-improving agent harnesses for any project.
 
-We built this for an internal agentic workflow we were working on, and felt that this can provide insights to building a better harness in general.
+We built this for an internal agentic workflow we were working on, and felt that this could provide insights to building a better harness in general.
 
 ## The problem
 
-Agents hallucinate. They skip steps under context pressure. They do shallow work that looks thorough. A static checklist doesn't fix this — under load, agents deprioritize instructions and self-report success without verification.
+Agents hallucinate. They skip steps under context pressure. They do shallow work that looks thorough. A static checklist doesn't fix this — under load, agents deprioritise instructions and self-report success without verification.
 
 Most agent harnesses are also static — designed once, shipped, and never updated. That works when the problem space is stable. But in domains where failure modes keep evolving — research, analysis, content automation, trading — a static harness degrades over time. Last month's checklist doesn't catch this month's edge case.
 
@@ -51,7 +51,7 @@ Claude reads your codebase, understands what the project **actually does**, and 
 
 1. **Asks where to track data** — local JSON (zero setup) or Notion (for team visibility)
 2. **Reads the pipeline** — loads `.harness/pipeline.md` and past failure history
-3. **Executes stages sequentially** — loads each stage skill, does the work, writes output artifacts
+3. **Executes stages sequentially** — loads each stage skill, does the work, writes output artefacts
 4. **Enforces gates mechanically** — runs `gate-enforcer.sh` after every stage (no skipping)
 5. **Asks you at human gates** — presents results in the conversation, waits for your approval before proceeding
 6. **Logs failures and improves** — every failure gets traced, fixed, and committed
@@ -73,23 +73,22 @@ You reply in the conversation. The agent can't proceed without your response.
     stage-1-name.md        # One skill file per stage
     stage-2-name.md
     ...
-  research/                # Working directory for output artifacts
-  .improvements/
+  research/                # Working directory for output artefacts. improvements/
     self-improve.md        # Self-improvement analysis template
     retrospective.md       # Post-run retrospective template
 ```
 
-The harness lives inside your project as `.harness/`. Add `.harness/research/` to `.gitignore` (artifacts are ephemeral). Commit the rest — it's the pipeline's memory that improves over time.
+The harness lives inside your project as `.harness/`. Add `.harness/research/` to `.gitignore` (artefacts are ephemeral). Commit the rest — it's the pipeline's memory that improves over time.
 
 ## How it works
 
-**Pipeline definition** (`pipeline.md`) — Defines each stage with its purpose, input/output artifacts, gate type (human or auto), and quality gate checklist. Any stage can kill the pipeline; a documented kill is a successful outcome.
+**Pipeline definition** (`pipeline.md`) — Defines each stage with its purpose, input/output artefacts, gate type (human or auto), and quality gate checklist. Any stage can kill the pipeline; a documented kill is a successful outcome.
 
-**Stage skills** (`skills/stage-N-name.md`) — Each stage has its own skill file loaded on-demand. Contains domain-specific instructions, quality gate checklist, known failure modes, and a self-improvement hook that fires when downstream stages find flaws.
+**Stage skills** (`skills/stage-N-name.md`) — Each stage has its own skill file loaded on demand. Contains domain-specific instructions, quality gate checklist, known failure modes, and a self-improvement hook that fires when downstream stages find flaws.
 
 **Quality gates** — Every stage has a checklist that must be fully checked before advancing. Items are mechanical and grep-able, not subjective prose. The gate enforcer won't let the pipeline advance with unchecked items.
 
-**Gate enforcer** (`gate-enforcer.sh`) — A shell script that mechanically checks output artifacts exist and all checklist items are checked. Prints BLOCKED or PASSED. No exceptions.
+**Gate enforcer** (`gate-enforcer.sh`) — A shell script that mechanically checks output artefacts exist, and all checklist items are checked. Prints BLOCKED or PASSED. No exceptions.
 
 **Human gates** — At key stages (first, last, and high-stakes decisions), the runner presents results directly in the Claude Code conversation and asks you to approve. The agent literally cannot proceed without your response — this is mechanically enforced by the conversation flow, not by instructions the agent can skip.
 
